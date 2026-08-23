@@ -1,0 +1,40 @@
+workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push image to registry? (true/false)'
+        required: false
+        default: 'false'
+      tags:
+        description: 'Comma-separated tags (default: latest)'
+        required: false
+        default: 'latest'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to registry (only if push=true)
+        if: ${{ github.event.inputs.push == 'true' }}
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build (and optionally push)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ github.event.inputs.push == 'true' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/jaxmusic:${{ github.event.inputs.tags }}
+            ghcr.io/${{ github.repository_owner }}/jaxmusic:latest
