@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# Virtualenvs and editor files
+*.sqlite3
+*.log
+*.pot
+*.mo
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets / env
+.env
+.env.*
+/etc/jaxmusic.env
+secrets/
+*.pem
+*.key
+
+# Git and CI
+.git
+.github
+
+# Docker
+docker-compose.override.yml
+
+# Other
+node_modules/
