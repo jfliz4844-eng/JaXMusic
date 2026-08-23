@@ -1,0 +1,16 @@
+# ignore virtualenv, caches, local files
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+dist/
+*.egg-info
+.git
+.DS_Store
+
+# Optional: ignore secrets file
+/etc/jaxmusic.env

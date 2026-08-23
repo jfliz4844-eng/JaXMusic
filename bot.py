@@ -110,7 +110,8 @@ def blocking_download_and_convert(url: str, out_dir: str) -> str:
     return str(mp3_name)
 
 
-async def download_and_convert(url: str) -> str:
+async def download_and_convert(url: str) -> tuple[str, str]:
+    """Run the blocking download/convert in a thread and return (mp3_path, tmpdir)."""
     loop = asyncio.get_running_loop()
     with ThreadPoolExecutor() as pool:
         tmpdir = tempfile.mkdtemp(prefix="jaxmusic_")
@@ -118,7 +119,7 @@ async def download_and_convert(url: str) -> str:
             mp3_path = await loop.run_in_executor(
                 pool, blocking_download_and_convert, url, tmpdir
             )
-            return mp3_path
+            return str(mp3_path), tmpdir
         except Exception:
             # cleanup on error
             shutil.rmtree(tmpdir, ignore_errors=True)
@@ -155,12 +156,31 @@ async def cmd_download(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     status_msg = await update.message.reply_text("Starting download... (this can take a while)")
     try:
-        mp3_path = await download_and_convert(url)
+        mp3_path, tmpdir = await download_and_convert(url)
         await status_msg.edit_text("Uploading MP3...")
-        # send as audio (so Telegram treats it as music/audio). For very large files (>50MB) consider send_document.
-        with open(mp3_path, "rb") as f:
-            await update.message.reply_audio(audio=f, filename=Path(mp3_path).name)
-        await status_msg.edit_text("Done! Uploaded MP3.")
+
+        # If file is large for Telegram upload, send as document instead of audio
+        try:
+            size = os.path.getsize(mp3_path)
+        except Exception:
+            size = 0
+
+        MAX_AUDIO_BYTES = 50 * 1024 * 1024  # 50 MB
+        try:
+            if size and size > MAX_AUDIO_BYTES:
+                # send as document
+                with open(mp3_path, "rb") as f:
+                    await update.message.reply_document(document=f, filename=Path(mp3_path).name)
+            else:
+                with open(mp3_path, "rb") as f:
+                    await update.message.reply_audio(audio=f, filename=Path(mp3_path).name)
+            await status_msg.edit_text("Done! Uploaded MP3.")
+        finally:
+            # Cleanup temporary directory
+            try:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            except Exception:
+                logger.exception("Failed to remove temporary directory")
     except Exception as e:
         logger.exception("Error in download handler")
         await status_msg.edit_text(f"Failed: {e}")

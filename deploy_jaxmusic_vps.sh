@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Example deploy script for a VPS (Ubuntu)
-# USAGE: Run on the VPS as a user with sudo privileges.
 set -euo pipefail
-
 APP_DIR="/opt/jaxmusic"
 VENV_DIR="$APP_DIR/venv"
 SERVICE_NAME="jaxmusic.service"
@@ -39,7 +36,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$APP_DIR
-Environment=TELEGRAM_TOKEN=PUT_YOUR_TOKEN_IN_SYSTEMD_ENV_OR_USE_ENV_FILE
+EnvironmentFile=/etc/jaxmusic.env
 ExecStart=$VENV_DIR/bin/python $APP_DIR/bot.py
 Restart=on-failure
 RestartSec=5s
